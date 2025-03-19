@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trash Talk - Waste Classifier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <h1 class="text-4xl font-bold mb-6 text-center">TrashCam</h1>
+
+    <div class="flex flex-col sm:flex-row bg-[#181818] p-6 rounded-2xl shadow-lg w-full max-w-md sm:max-w-4xl space-y-6 sm:space-y-0 sm:space-x-4">
+        
+        <!-- Upload Section -->
+        <div class="flex flex-col items-center justify-center w-full sm:w-1/2 border-2 border-dashed border-gray-600 p-6 rounded-xl">
+            <input type="file" id="image-input" class="hidden" accept="image/*">
+            
+            <!-- Add Photo Button -->
+            <label for="image-input" id="add-photo-btn" 
+                class="cursor-pointer bg-[#5A4FCF] hover:bg-[#4A40B8] text-white px-5 py-2 rounded-lg">
+                Add Photo
+            </label>
+
+            <!-- Image Preview -->
+            <div id="image-preview" class="mt-4 hidden">
+                <img id="preview-img" class="w-40 h-40 object-cover rounded-lg border border-gray-600" alt="Preview">
+            </div>
+
+            <!-- Classify Button (Initially Hidden) -->
+            <button id="classify-btn" class="mt-4 bg-[#5A4FCF] hover:bg-[#4A40B8] text-white px-5 py-2 rounded-lg hidden">
+                Classify
+            </button>
+        </div>
+
+        <!-- Output Section -->
+        <div class="bg-[#232323] p-6 rounded-xl w-full sm:w-1/2">
+            <h2 class="text-lg font-semibold">Output</h2>
+            <div id="result" class="mt-3 text-gray-300 text-center">
+                <p>Upload an image and click classify.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("image-input").addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById("preview-img").src = e.target.result;
+                    document.getElementById("image-preview").classList.remove("hidden");
+                    document.getElementById("add-photo-btn").classList.add("hidden"); // Hide Add Photo button
+                    document.getElementById("classify-btn").classList.remove("hidden"); // Show Classify button
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById("classify-btn").addEventListener("click", async function() {
+            let imageInput = document.getElementById("image-input").files[0];
+            if (!imageInput) {
+                document.getElementById("result").innerHTML = "<p class='text-red-400'>Please upload an image first.</p>";
+                return;
+            }
+
+            // Show "Processing..." while waiting for the response
+            document.getElementById("result").innerHTML = "<p class='text-yellow-400 bg-[#434C2D] font-bold p-3 rounded-lg'>Processing...</p>";
+
+            let formData = new FormData();
+            formData.append("image", imageInput);
+
+            let response = await fetch("/predict", {
+                method: "POST",
+                body: formData
+            });
+
+            let result = await response.json();
+
+            // Display the final result with improved styling
+            document.getElementById("result").innerHTML = `
+                <p class="text-green-400 text-lg font-semibold">Result:</p>
+                <p class="text-white bg-[#2F4C2D] font-bold p-3 rounded-lg">${result.message}</p>
+            `;
+        });
+    </script>
+
+</body>
+</html>
